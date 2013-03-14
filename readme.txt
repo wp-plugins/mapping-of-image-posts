@@ -1,21 +1,22 @@
 === Mapping of image posts ===
 Contributors: PressLabs, olarmarius
 Donate link: http://www.presslabs.com/
-Tags: mapping, posts, image, presslabs
+Tags: mapping, posts, image, apache, htaccess, nginx, rewrite, php5, scan, redirect, attachment, presslabs
 Requires at least: 3.5.1
 Tested up to: 3.5
-Stable tag: 1.1
+Stable tag: 1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Generate a mapping of image - article it belongs, by scanning all posts.
+Generate a mapping of image - article it belongs, by scanning all attachments.
 
 == Description ==
 
-Generate a mapping of image - article it belongs, by scanning all posts.
+Generate a mapping of image - article it belongs, by scanning all attachments.
 
 = Requirements =
 This plugin requires PHP5.
+
 
 == Installation ==
 
@@ -29,7 +30,8 @@ Use your plugin from the `Tools->Mapping` page;
 
 == Frequently Asked Questions ==
 
-none
+= Why should I use this plugin? =
+Use this plugin if you want to redirect your visitors from viewing image to the corresponding post.
 
 == Screenshots ==
 
@@ -37,10 +39,16 @@ none
 
 == Changelog ==
 
+= 1.2 =
+* add settings link on plugin page.
+
 = 1.1 =
 * start version on WP.
 
 == Upgrade Notice ==
+
+= 1.2 =
+Add settings link on plugin page.
 
 = 1.1 =
 Start version on WP.

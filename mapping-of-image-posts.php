@@ -2,9 +2,9 @@
 /*
  * Plugin Name: Mapping of image posts
  * Plugin URI: http://wordpress.org/extend/plugins/mapping-of-image-posts/
- * Description: Generate a mapping of image - article it belongs, by scanning all images.
+ * Description: Generate a mapping of image - article it belongs, by scanning all attachments.
  * Author: PressLabs
- * Version: 1.1
+ * Version: 1.2
  * Author URI: http://www.presslabs.com/
  */
 
@@ -27,7 +27,24 @@ function mapping_of_image_posts_deactivate() {
 register_deactivation_hook( __FILE__, 'mapping_of_image_posts_deactivate' );
 
 //--------------------------------------------------------------------
+//
+// Add settings link on plugin page.
+//
+function mapping_of_image_posts_settings_link($links) { 
+	$plugin = plugin_basename(__FILE__); 
+	$settings_link = '<a href="tools.php?page='.$plugin.'&tab=settings">Settings</a>'; 
+	array_unshift($links, $settings_link);
 
+	return $links; 
+}
+ 
+$plugin = plugin_basename(__FILE__); 
+add_filter("plugin_action_links_$plugin", 'mapping_of_image_posts_settings_link' );
+
+//--------------------------------------------------------------------
+//
+// Create the subfolder for the resulted files.
+//
 function mapping_of_image_posts_mkdir() {
 	$path = dirname($_SERVER['SCRIPT_FILENAME']) . "/../wp-content/uploads/mapping-of-image-posts";
 
@@ -36,19 +53,6 @@ function mapping_of_image_posts_mkdir() {
 			die("Failed to create folder '$path'");
 }
 add_action( 'admin_init', 'mapping_of_image_posts_mkdir' );
-
-//--------------------------------------------------------------------
-
-function mapping_of_image_posts_str_between( $content, $start, $end ) {
-	$r = explode($start, $content);
-
-	if (isset($r[1])) {
-		$r = explode($end, $r[1]);
-		return $r[0];
-	}
-
-	return '';
-}
 
 //--------------------------------------------------------------------
 
@@ -96,7 +100,9 @@ function mapping_of_image_posts_json_response($data = null, $status = 'ok', $sta
 }
 
 //--------------------------------------------------------------------
-
+//
+// Return random letter.
+//
 function mapping_of_image_posts_rand_letter() {
 	$int = rand(0,51);
 	$a_z = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -106,34 +112,48 @@ function mapping_of_image_posts_rand_letter() {
 }
 
 //--------------------------------------------------------------------
-
+//
+// The AJAX callback function
+//
 function mapping_of_image_posts_callback() {
 	global $wpdb;
 
+	//
+	// The diference between apache and nginx mapping files
+	//
 	$termination_char = "";
 	if ( get_option("moip_out_file_type") == "nginx" )
 		$termination_char = ";";
 
+	//
+	// Get the output filename and the maximum attachments scanned per step.
+	//
 	$filename = get_transient('mapping_of_image_posts_filename');
 	$max_attachments = get_option( 'MOIP_MAX_ATTACHMENTS_PER_SCAN');
 
-	$pos = 0;
+	$pos = 0; // Initialize the start position for scanning process.
 
 	if ( isset( $_POST['pos'] ) )
 		$pos = intval( $_POST['pos'] );
 
+	//
+	// Reset the file content and the position of scanning process.
+	//
 	if ( $pos == 0 ) {
 		file_put_contents($filename,'');
 		set_transient( 'lines_affected', 0, 1800 );
 	}
 
+	//
+	// SELECT the attachments for every scanning step.
+	//
 	$attachment_ids = $wpdb->get_results($wpdb->prepare(
 		"SELECT ID, post_parent FROM $wpdb->posts WHERE post_type = 'attachment' LIMIT %d, %d", $pos, 
           	$max_attachments));
 
-	$written = 0;
-	$scanned = 0;
-	$content = "";
+	$written = 0; // Count lines written into the output file.
+	$scanned = 0; // Count scanned attachments.
+	$content = ""; // Retain the output content for each scanning step.
 	foreach ($attachment_ids as $attachment_id) {
 		$moip_image_type = get_option('moip_image_type');
 

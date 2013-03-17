@@ -1,7 +1,7 @@
 === Mapping of image posts ===
 Contributors: PressLabs, olarmarius
 Donate link: http://www.presslabs.com/
-Tags: mapping, posts, image, apache, htaccess, nginx, rewrite, php5, scan, redirect, attachment, presslabs
+Tags: mapping, posts, image, apache, htaccess, nginx, rewrite, php5, scan, redirect, attachment, presslabs 
 Requires at least: 3.5.1
 Tested up to: 3.5
 Stable tag: 1.2

@@ -1,5 +1,5 @@
 === Mapping of image posts ===
-Contributors: PressLabs, olarmarius
+Contributors: PressLabs
 Donate link: http://www.presslabs.com/
 Tags: mapping, posts, image, presslabs
 Requires at least: 3.5.1

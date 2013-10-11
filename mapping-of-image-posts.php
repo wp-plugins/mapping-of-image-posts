@@ -9,16 +9,14 @@
  */
 
 //--------------------------------------------------------------------
-
 function mapping_of_image_posts_activate() {
 	add_option( 'MOIP_MAX_ATTACHMENTS_PER_SCAN', '300', '' );
-	add_option( 'moip_image_type', array('1','','',''), '' );
+	add_option( 'moip_image_type', array( '1', '', '', '' ), '' );
 	add_option( 'moip_out_file_type', 'nginx', '' );
 }
 register_activation_hook( __FILE__, 'mapping_of_image_posts_activate' );
 
 //--------------------------------------------------------------------
-
 function mapping_of_image_posts_deactivate() {
 	delete_option( 'MOIP_MAX_ATTACHMENTS_PER_SCAN' );
 	delete_option( 'moip_image_type' );
@@ -27,35 +25,30 @@ function mapping_of_image_posts_deactivate() {
 register_deactivation_hook( __FILE__, 'mapping_of_image_posts_deactivate' );
 
 //--------------------------------------------------------------------
-//
 // Add settings link on plugin page.
-//
-function mapping_of_image_posts_settings_link($links) { 
-	$plugin = plugin_basename(__FILE__); 
-	$settings_link = '<a href="tools.php?page='.$plugin.'&tab=settings">Settings</a>'; 
-	array_unshift($links, $settings_link);
+function mapping_of_image_posts_settings_link( $links ) { 
+	$plugin = plugin_basename( __FILE__ ); 
+	$settings_link = '<a href="tools.php?page=' . $plugin . '&tab=settings">Settings</a>'; 
+	array_unshift( $links, $settings_link );
 
 	return $links; 
 }
  
-$plugin = plugin_basename(__FILE__); 
-add_filter("plugin_action_links_$plugin", 'mapping_of_image_posts_settings_link' );
+$plugin = plugin_basename( __FILE__ ); 
+add_filter( "plugin_action_links_$plugin", 'mapping_of_image_posts_settings_link' );
 
 //--------------------------------------------------------------------
-//
 // Create the subfolder for the resulted files.
-//
 function mapping_of_image_posts_mkdir() {
-	$path = dirname($_SERVER['SCRIPT_FILENAME']) . "/../wp-content/uploads/mapping-of-image-posts";
+	$path = dirname( $_SERVER['SCRIPT_FILENAME'] ) . "/../wp-content/uploads/mapping-of-image-posts";
 
-	if ( !is_dir($path) )
-		if ( !mkdir( $path, 0755 ) )
-			die("Failed to create folder '$path'");
+	if ( ! is_dir( $path ) )
+		if ( ! mkdir( $path, 0755 ) )
+			die( "Failed to create folder '$path'" );
 }
 add_action( 'admin_init', 'mapping_of_image_posts_mkdir' );
 
 //--------------------------------------------------------------------
-
 function mapping_of_image_posts_stylesheet() {
 	wp_register_style( 'mapping-of-image-posts-style', plugins_url('/mapping-of-image-posts.css', __FILE__), false, '1.0.0' );
 	wp_enqueue_style( 'mapping-of-image-posts-style');
@@ -63,12 +56,11 @@ function mapping_of_image_posts_stylesheet() {
 add_action('admin_enqueue_scripts', 'mapping_of_image_posts_stylesheet');
 
 //--------------------------------------------------------------------
-
-function mapping_of_image_posts_javascript($hook) {
-	if( 'tools_page_mapping-of-image-posts/mapping-of-image-posts' != $hook )
+function mapping_of_image_posts_javascript( $hook ) {
+	if ( 'tools_page_mapping-of-image-posts/mapping-of-image-posts' != $hook )
 		return;
 
-	$filename = dirname($_SERVER['SCRIPT_FILENAME']) . "/../wp-content/uploads/mapping-of-image-posts/moip" 
+	$filename = dirname( $_SERVER['SCRIPT_FILENAME'] ) . "/../wp-content/uploads/mapping-of-image-posts/moip" 
 		. "-"
 		. time() 
 		. "-"
@@ -77,44 +69,39 @@ function mapping_of_image_posts_javascript($hook) {
 		. mapping_of_image_posts_rand_letter() 
 		. ".txt";
 
-	set_transient('mapping_of_image_posts_filename', $filename, 1800);
+	set_transient( 'mapping_of_image_posts_filename', $filename, 1800 );
 
-	wp_enqueue_script( 'mapping-of-image-posts', plugins_url('/mapping-of-image-posts.js', __FILE__), array('jquery'), time() );
+	wp_enqueue_script( 'mapping-of-image-posts', plugins_url( '/mapping-of-image-posts.js', __FILE__ ), array('jquery'), time() );
 
 	// in javascript, object properties are accessed as ajax_object.ajax_url, ajax_object.we_value
 	wp_localize_script( 'ajax-script', 'ajax_object',
 		array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'we_value' => $email_nonce ) );
 }
-add_action('admin_enqueue_scripts', 'mapping_of_image_posts_javascript');
+add_action( 'admin_enqueue_scripts', 'mapping_of_image_posts_javascript' );
 
 //--------------------------------------------------------------------
+function mapping_of_image_posts_json_response( $data = null, $status = 'ok', $status_message = null ) {
+	header( "Content-type: application/json" );
 
-function mapping_of_image_posts_json_response($data = null, $status = 'ok', $status_message = null) {
-	header("Content-type: application/json");
-
-	echo json_encode(array(
-		'status' => $status,
+	echo json_encode( array(
+		'status'  => $status,
 		'message' => $status_message,
-		'data' => $data
+		'data'    => $data
 	));
 }
 
 //--------------------------------------------------------------------
-//
 // Return random letter.
-//
 function mapping_of_image_posts_rand_letter() {
-	$int = rand(0,51);
+	$int = rand(0, 51);
 	$a_z = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	$rand_letter = $a_z[$int];
+	$rand_letter = $a_z[ $int ];
 
 	return $rand_letter;
 }
 
 //--------------------------------------------------------------------
-//
 // The AJAX callback function
-//
 function mapping_of_image_posts_callback() {
 	global $wpdb;
 
@@ -122,14 +109,14 @@ function mapping_of_image_posts_callback() {
 	// The diference between apache and nginx mapping files
 	//
 	$termination_char = "";
-	if ( get_option("moip_out_file_type") == "nginx" )
+	if ( "nginx" == get_option( "moip_out_file_type" ) )
 		$termination_char = ";";
 
 	//
 	// Get the output filename and the maximum attachments scanned per step.
 	//
-	$filename = get_transient('mapping_of_image_posts_filename');
-	$max_attachments = get_option( 'MOIP_MAX_ATTACHMENTS_PER_SCAN');
+	$filename = get_transient( 'mapping_of_image_posts_filename' );
+	$max_attachments = get_option( 'MOIP_MAX_ATTACHMENTS_PER_SCAN' );
 
 	$pos = 0; // Initialize the start position for scanning process.
 
@@ -139,23 +126,23 @@ function mapping_of_image_posts_callback() {
 	//
 	// Reset the file content and the position of scanning process.
 	//
-	if ( $pos == 0 ) {
-		file_put_contents($filename,'');
+	if ( 0 == $pos ) {
+		file_put_contents( $filename, '' );
 		set_transient( 'lines_affected', 0, 1800 );
 	}
 
 	//
 	// SELECT the attachments for every scanning step.
 	//
-	$attachment_ids = $wpdb->get_results($wpdb->prepare(
+	$attachment_ids = $wpdb->get_results( $wpdb->prepare(
 		"SELECT ID, post_parent FROM $wpdb->posts WHERE post_type = 'attachment' LIMIT %d, %d", $pos, 
-          	$max_attachments));
+          	$max_attachments ) );
 
 	$written = 0; // Count lines written into the output file.
 	$scanned = 0; // Count scanned attachments.
 	$content = ""; // Retain the output content for each scanning step.
-	foreach ($attachment_ids as $attachment_id) {
-		$moip_image_type = get_option('moip_image_type');
+	foreach ( $attachment_ids as $attachment_id ) {
+		$moip_image_type = get_option( 'moip_image_type' );
 
 		$post_url = get_permalink( $attachment_id->post_parent );
 		$post_parsed = parse_url( $post_url );
@@ -163,20 +150,20 @@ function mapping_of_image_posts_callback() {
 		//$post_out = $post_url;
 
 		$image_type_string = array ( 'full', 'thumbnail', 'medium', 'large' );
-		$array_image_out = array(null);
-		for ( $k = 0; $k < 4; $k++ )
-			if ( $moip_image_type[$k] == '1' ){
-				$attachment_image = wp_get_attachment_image_src( $attachment_id->ID, $image_type_string[$k] );
+		$array_image_out = array( null );
+		for ( $k = 0; $k < 4; $k++ ) {
+			if ( '1' == $moip_image_type[ $k ] ) {
+				$attachment_image = wp_get_attachment_image_src( $attachment_id->ID, $image_type_string[ $k ] );
 				$image_parsed = parse_url( $attachment_image[0] );
 				$image_out = $image_parsed["path"] . $image_parsed["query"];
 
-				if ( ($image_out > '') && ($post_out > '') && (!in_array($image_out, $array_image_out)) ) {
-					array_push($array_image_out, $image_out);
+				if ( ( '' < $image_out ) && ( '' < $post_out ) && ( ! in_array( $image_out, $array_image_out ) ) ) {
+					array_push( $array_image_out, $image_out );
 					$content .= $image_out . " " . $post_out . $termination_char . "\n";
 					$written++;
 				}
 			}
-
+		}
 		$scanned++;
 	}
 	$lines_affected = get_transient( 'lines_affected' );
@@ -185,36 +172,35 @@ function mapping_of_image_posts_callback() {
 
 	file_put_contents( $filename, $content, FILE_APPEND);
 
-	if( count($attachment_ids) < $max_attachments ) {
+	if ( count( $attachment_ids ) < $max_attachments ) {
 		$lines_affected = get_transient( 'lines_affected' );
 
 		$message = null;
-		if ( $scanned > 0 ) {
+		if ( 0 < $scanned ) {
 			$message = 'Attachments scanned between ' . ($pos + 1) . ' and ' . ($pos + $scanned);
-			if ( $scanned == 1 )
+			if ( 1 == $scanned )
 				$message = "Attachments scanned " . ($pos + $scanned);
 		}
 
-		mapping_of_image_posts_json_response($lines_affected, 'finish', $message);
+		mapping_of_image_posts_json_response( $lines_affected, 'finish', $message );
 		die();
 	}
 
 	$next_pos = $pos + $max_attachments;
 
 	$message = null;
-	if ( $scanned > 0 ) {
+	if ( 0 < $scanned ) {
 		$message = "Attachments scanned between " . ($pos + 1) . " and " . ($pos + $scanned);
-		if ( $scanned == 1 )
+		if ( 1 == $scanned )
 			$message = "Attachment scanned " . ($pos + $scanned);
 	}
 
-	mapping_of_image_posts_json_response($next_pos,'ok', $message);
+	mapping_of_image_posts_json_response( $next_pos, 'ok', $message );
 	die();
 }
-add_action('wp_ajax_mapping_of_image_posts', 'mapping_of_image_posts_callback');
+add_action( 'wp_ajax_mapping_of_image_posts', 'mapping_of_image_posts_callback' );
 
 //----------------------------------------------------------------------------------------------
-
 function mapping_of_image_posts_update_options() {
 	$eroare = '';
   
@@ -267,7 +253,6 @@ function mapping_of_image_posts_update_options() {
 }
 
 //--------------------------------------------------------------------
-
 function mapping_of_image_posts_options() {
 	$tab = 'generator'; // default tab
 
@@ -277,21 +262,23 @@ function mapping_of_image_posts_options() {
 
 	if ( isset( $_POST['submit_settings'] ) ) {
 		mapping_of_image_posts_update_options();
-	} ?>
-
+	}
+?>
 <div class="wrap">
 
 
 
 <div id="icon-tools" class="icon32">&nbsp;</div>
 <h2 class="nav-tab-wrapper">
-<a class="nav-tab<?php if($tab=='generator')echo' nav-tab-active';?>" href="tools.php?page=mapping-of-image-posts/mapping-of-image-posts.php&tab=generator">Mapping Generator</a>
-<a class="nav-tab<?php if($tab=='settings')echo' nav-tab-active';?>" href="tools.php?page=mapping-of-image-posts/mapping-of-image-posts.php&tab=settings">Settings</a>
+<a class="nav-tab<?php if ( 'generator' == $tab ) echo ' nav-tab-active'; ?>" href="tools.php?page=mapping-of-image-posts/mapping-of-image-posts.php&tab=generator">Mapping Generator</a>
+<a class="nav-tab<?php if ( 'settings' == $tab ) echo ' nav-tab-active'; ?>" href="tools.php?page=mapping-of-image-posts/mapping-of-image-posts.php&tab=settings">Settings</a>
 </h2>
 
 
 
-<?php if($tab=='generator') { ?>
+
+
+<?php if ( 'generator' == $tab ) { ?>
 
 <div class="postbox" style="float:left; display:block; width:auto; height:auto; padding:10px;margin-top:10px;">
 	<p>Generate a mapping of image - article it belongs, by scanning all attachments: 
@@ -310,17 +297,19 @@ function mapping_of_image_posts_options() {
 
 
 
-<?php if($tab=='settings') {
+
+
+<?php if ( 'settings' == $tab ) {
 	$moip_image_type = get_option('moip_image_type');
 	$image_type = array('','','','');
 	for ( $k = 0; $k < 4; $k++ )
-		if ( $moip_image_type[$k] == '1' )
-			$image_type[$k] = ' checked="checked"';
+		if ( '1' == $moip_image_type[ $k ] )
+			$image_type[ $k ] = ' checked="checked"';
 
 	$moip_out_file_type = get_option('moip_out_file_type');
 	$file_type = array('','');
-	if ( $moip_out_file_type == 'nginx' )  $file_type[0] = ' checked="checked"';
-	if ( $moip_out_file_type == 'apache' ) $file_type[1] = ' checked="checked"';
+	if ( 'nginx' == $moip_out_file_type )  $file_type[0] = ' checked="checked"';
+	if ( 'apache' == $moip_out_file_type ) $file_type[1] = ' checked="checked"';
 ?>
 
 <form method="post">
@@ -396,6 +385,8 @@ function mapping_of_image_posts_options() {
 
 
 
+
+
 </div><!-- .wrap -->
 <?php }
 
@@ -412,4 +403,3 @@ function mapping_of_image_posts_menu() {
 }
 add_action('admin_menu', 'mapping_of_image_posts_menu');
 
-?>
